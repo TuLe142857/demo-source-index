@@ -16,7 +16,7 @@ to prefix all module names with `demo_`:
 
 Run the following command (replace `<name>` with the demo module name; use `--package` if the demo provides CLI scripts):
 ```shell
-uv init demo_<name> --package --bare --vcs none
+uv init demo_<name> --package --vcs none
 ```
 *This command will automatically initialize the `demo_<name>` directory and add this module to the `members` list in the [pyproject.toml](pyproject.toml) file at the root directory.*
 
