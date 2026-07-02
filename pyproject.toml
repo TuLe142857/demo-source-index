@@ -1,2 +1,4 @@
 [tool.uv.workspace]
-members = []
+members = [
+    "demo-ast",
+]
