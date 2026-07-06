@@ -1,4 +1,5 @@
 [tool.uv.workspace]
 members = [
     "demo-ast",
+    "demo-graphdb",
 ]

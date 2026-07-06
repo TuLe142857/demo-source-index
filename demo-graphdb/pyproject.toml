@@ -1,0 +1,22 @@
+[project]
+name = "demo-graphdb"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "HieuITMHG", email = "danghuuhieu038@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "llama-cpp-python>=0.3.32",
+    "neo4j>=6.2.0",
+    "tree-sitter>=0.26.0",
+    "tree-sitter-python>=0.25.0",
+]
+
+[project.scripts]
+demo-graphdb = "demo_graphdb:main"
+
+[build-system]
+requires = ["uv_build>=0.11.6,<0.12.0"]
+build-backend = "uv_build"
