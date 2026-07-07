@@ -1,4 +1,4 @@
-from demo_ast.parser import  ParserFactory
+from demo_ast.parser import ParserFactory
 
 
 def test_parse_python(parser_factory: ParserFactory):

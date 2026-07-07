@@ -9,6 +9,7 @@ def test_load_language_by_factory_method(language_configs: Sequence[LanguageConf
         lang = config.language_factory()
         assert isinstance(lang, Language)
 
+
 def test_load_language_from_registry(language_configs: Sequence[LanguageConfig]):
     registry = LanguageRegistry(language_configs)
     for config in language_configs:

@@ -40,6 +40,8 @@ class LanguageConfig:
         """
         path = Path(filename)
 
-        match_pattern = any([fnmatch.fnmatch(path.name, pattern) for pattern in self.filename_patterns])
+        match_pattern = any(
+            [fnmatch.fnmatch(path.name, pattern) for pattern in self.filename_patterns]
+        )
         match_extension = path.suffix in self.extensions
         return match_pattern or match_extension

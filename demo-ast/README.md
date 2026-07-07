@@ -2,6 +2,7 @@
 
 > Docs:
 > - [tree-sitter docs](https://tree-sitter.github.io/tree-sitter/index.html)
+> - [tree-sitter python docs](https://tree-sitter.github.io/py-tree-sitter/index.html)
 > - [tree-sitter source code](https://github.com/tree-sitter/tree-sitter)
 > - [grammar](./docs/grammar.md)
 
