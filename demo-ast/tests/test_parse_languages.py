@@ -1,4 +1,4 @@
-from demo_ast.parser import ParserFactory
+from demo_ast.core import ParserFactory
 
 
 def test_parse_python(parser_factory: ParserFactory):
@@ -7,4 +7,4 @@ def run():
     print("hello")
     """
     parser = parser_factory.get_parser("python")
-    tree = parser.parse(source)
+    parser.parse(source)

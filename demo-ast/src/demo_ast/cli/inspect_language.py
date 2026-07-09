@@ -1,19 +1,20 @@
+import dataclasses
+import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Annotated, Any, Literal, Protocol, TextIO
-import json
+from typing import Annotated, Any, Literal
+
 import typer
-from pygments.lexers import berry
 from tabulate import tabulate
 from tree_sitter import Language
+
+from demo_ast.core import LanguageConfig
+from demo_ast.languages import get_language_registry
+
 from .formatter import Formatter
 
-from .config import language_registry
-from demo_ast.parser import LanguageConfig
-
-app = typer.Typer(name="language")
-
-import dataclasses
+app = typer.Typer(name="language", help="Inspect language config")
+language_registry = get_language_registry()
 
 
 @app.command(name="ls", help="List available languages")
@@ -210,7 +211,9 @@ class PlainFormatter(LanguageInspectionFormatter):
         def process_dict(d: dict[str, Any]) -> dict[str, Any]:
             for k, v in d.items():
                 if isinstance(v, str):
-                    d[k] = v.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+                    d[k] = (
+                        v.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+                    )
             return d
 
         nodes_data = [process_dict(_.to_dict()) for _ in data.node_kinds]
@@ -219,9 +222,7 @@ class PlainFormatter(LanguageInspectionFormatter):
         node_kinds_table = tabulate(
             nodes_data, headers="keys", tablefmt="rounded_grid", maxcolwidths=20
         )
-        fields_table = tabulate(
-            fields_data, headers="keys", tablefmt="rounded_grid"
-        )
+        fields_table = tabulate(fields_data, headers="keys", tablefmt="rounded_grid")
 
         return f"""
 # {data.name.upper()}\n
@@ -273,7 +274,11 @@ def inspect_language(
             )
             for lang_name, lang_config in language_registry.language_configs.items()
         ]
-        result = "\n".join(results) if fmt != "json" else json.dumps([json.loads(_) for _ in results], indent=2)
+        result = (
+            "\n".join(results)
+            if fmt != "json"
+            else json.dumps([json.loads(_) for _ in results], indent=2)
+        )
 
     else:
         result = formatter.format(
@@ -285,8 +290,6 @@ def inspect_language(
 
     if file is not None:
         path = Path(file)
-
-        with open(file, "w") as f:
-            f.write(result)
+        path.write_text(result)
     else:
         print(result)

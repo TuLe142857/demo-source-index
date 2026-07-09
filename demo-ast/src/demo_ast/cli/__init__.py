@@ -1,4 +1,5 @@
 import typer
+
 from .inspect_language import app as inspect_command
 from .parse_code import app as parse_command
 

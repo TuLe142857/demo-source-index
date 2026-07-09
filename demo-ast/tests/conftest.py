@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 
 import pytest
-from demo_ast.default_config import get_language_configs
-from demo_ast.parser import LanguageConfig, LanguageRegistry, ParserFactory
+
+from demo_ast.core import LanguageConfig, LanguageRegistry, ParserFactory
+from demo_ast.languages import get_language_configs
 
 
 @pytest.fixture(scope="session")

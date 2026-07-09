@@ -1,7 +1,7 @@
 [project]
 name = "demo-ast"
 version = "0.1.0"
-description = "Add your description here"
+description = "Demo module for Parse code with tree-sitter"
 readme = "README.md"
 authors = [
     { name = "tule", email = "tuleaibk@gmail.com" }
@@ -21,6 +21,7 @@ dependencies = [
     "tree-sitter-python>=0.25.0",
     "tree-sitter-rust>=0.24.2",
     "tree-sitter-toml>=0.7.0",
+    "tree-sitter-typescript>=0.23.2",
     "tree-sitter-yaml>=0.7.2",
     "typer>=0.26.8",
 ]
@@ -41,3 +42,9 @@ addopts = ["-vv", "-ra", "-q"]
 testpaths = [
     "tests",
 ]
+
+[tool.ruff]
+extend = "../pyproject.toml"
+
+[tool.ruff.lint.isort]
+known-first-party = ["demo_ast"]

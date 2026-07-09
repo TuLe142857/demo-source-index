@@ -1,12 +1,6 @@
-from demo_ast.parser import (
-    UnsupportedLanguage,
-    LanguageConfig,
-    LanguageRegistry,
-    ParserFactory,
-)
-
-from demo_ast.default_config import get_language_configs
+from demo_ast.core import ParserFactory
+from demo_ast.languages import get_language_configs, get_language_registry
 
 language_configs = get_language_configs()
-language_registry = LanguageRegistry(language_configs)
+language_registry = get_language_registry()
 parser_factory = ParserFactory(language_registry)

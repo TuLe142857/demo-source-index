@@ -1,5 +1,6 @@
-from .language_registry import LanguageRegistry
 from tree_sitter import Parser
+
+from demo_ast.core.language_registry import LanguageRegistry
 
 
 class ParserFactory:

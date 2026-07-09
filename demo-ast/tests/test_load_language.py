@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
 from tree_sitter import Language
-from demo_ast.parser import LanguageConfig, LanguageRegistry, UnsupportedLanguage
+
+from demo_ast.core import LanguageConfig, LanguageRegistry
 
 
 def test_load_language_by_factory_method(language_configs: Sequence[LanguageConfig]):
