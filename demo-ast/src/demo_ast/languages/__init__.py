@@ -36,5 +36,5 @@ __all__ = [
     "JAVASCRIPT",
     "PYTHON",
     "RUST",
-    "TYPESCRIPT"
+    "TYPESCRIPT",
 ]

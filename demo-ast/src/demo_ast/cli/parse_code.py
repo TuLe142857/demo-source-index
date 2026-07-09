@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from tree_sitter import Node
 
-from demo_ast.core import ParserFactory, UASTNode
+from demo_ast.core import ParserFactory
 from demo_ast.languages import get_language_registry
+
+from .formatter import TreeFormatter
 
 app = typer.Typer()
 
@@ -13,38 +15,59 @@ language_registry = get_language_registry()
 parser_factory = ParserFactory(language_registry)
 
 
-# ├──
-# └──
-def inspect_cst(
+def cst_to_dict(
     node: Node,
-    level: int = 0,
-    symbol: str = "├─",
-    indent: str = "  ",
-):
-    print(f"{indent * level}{symbol}[{node.type}]")
-    for idx, child in enumerate(node.children):
-        if idx != (node.child_count - 1):
-            inspect_cst(child, level + 1)
-        else:
-            inspect_cst(child, level + 1, symbol="└─")
+    *,
+    limit: int = -1,
+    named_only: bool = False,
+    excludes: list[str] | None = None,
+) -> dict[str, Any] | None:
 
+    if (named_only and not node.is_named) or (
+        excludes is not None and node.type in excludes
+    ):
+        return None
 
-def inspect_uast(node: UASTNode, level: int = 0):
-    print(f"{'   ' * level}├──{node.kind}")
-    print(f"{'   ' * level}|  {node.metadata}")
-    for child in node.children:
-        inspect_uast(child, level + 1)
+    if (limit == 0) or (node.child_count == 0):
+        return {f"{node.type}": None}
+
+    tree = {f"{node.type}": []}
+    for idx in range(node.child_count):
+        children = node.child(idx)
+        if children is None:
+            continue
+        subtree = cst_to_dict(
+            children, limit=limit - 1, named_only=named_only, excludes=excludes
+        )
+        if subtree is not None:
+            tree[f"{node.type}"].append(subtree)
+    return tree
 
 
 @app.command(name="parse", help="Parse the code")
 def parse(
-    path: Annotated[str, typer.Argument(help="Path file code")],
+    path: Annotated[str, typer.Argument(help="Path to source code(file)")],
+    limit: Annotated[int, typer.Option("--limit", help="Depth limit")] = -1,
+    named_only: Annotated[
+        bool, typer.Option("--named-only", help="Exclude anonymous node")
+    ] = False,
+    excludes: Annotated[
+        list[str] | None, typer.Option("--exclude", help="Exclude node type")
+    ] = None,
 ):
     path = Path(path)
     if (not path.exists()) or (not path.is_file()):
         raise RuntimeError(f"Path {path} is not a file")
 
-    # language = language_registry.get_language_for_file(path.name)
-    # language_name = language.name
-    # query_str = language_registry.language_configs[language_name].query_str
-    # parser = parser_factory.get_parser(language_name)
+    content = path.read_bytes()
+
+    language_name = language_registry.resolve_language_name_for_file(path.name)
+    parser = parser_factory.get_parser(language_name)
+
+    cst_tree = parser.parse(content)
+    cst_tree_str = cst_to_dict(
+        cst_tree.root_node, limit=limit, named_only=named_only, excludes=excludes
+    )
+
+    formatter = TreeFormatter()
+    print(formatter.format(cst_tree_str))
