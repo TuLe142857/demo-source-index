@@ -1,0 +1,19 @@
+[project]
+name = "demo-neo4j"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "HieuITMHG", email = "danghuuhieu038@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "neo4j>=6.2.0",
+]
+
+[project.scripts]
+demo-neo4j = "demo_neo4j:main"
+
+[build-system]
+requires = ["uv_build>=0.11.6,<0.12.0"]
+build-backend = "uv_build"
