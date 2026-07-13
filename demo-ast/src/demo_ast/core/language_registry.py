@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
-from tree_sitter import Language
+from tree_sitter import Language, Query
 
 from .exception import UnsupportedLanguage
 
@@ -97,6 +97,7 @@ class LanguageRegistry:
         self._supported_file_patterns: Sequence[str] = tuple(language_patterns)
         self._supported_file_extensions = tuple(language_patterns)
         self._languages_cache: dict[str, Language] = {}
+        self._query_cache: dict[str, Query] = {}
 
     @property
     def supported_languages(self) -> Sequence[str]:
@@ -120,6 +121,14 @@ class LanguageRegistry:
         return self._configs
 
     def get_language(self, name: str) -> Language:
+        """
+
+        Args:
+            name: language name
+
+        Returns: Language instance
+
+        """
         if name not in self._configs:
             raise UnsupportedLanguage(name)
         lang = self._languages_cache.get(name)
@@ -129,11 +138,46 @@ class LanguageRegistry:
             self._languages_cache[name] = lang
         return lang
 
+    def get_query(self, name: str) -> Query:
+        """
+        Get query instance. Use to standardize tree
+        Args:
+            name: language name
+
+        Returns: Query instance
+
+        """
+        if name not in self._configs:
+            raise UnsupportedLanguage(name)
+        query = self._query_cache.get(name)
+        if query is None:
+            config = self._configs[name]
+            lang = self.get_language(name)
+            query = Query(lang, config.query_str)
+            self._query_cache[name] = query
+        return query
+
     def get_language_for_file(self, filename: str) -> Language:
+        """
+
+        Args:
+            filename: filename. Filename can contain directory with separator.
+
+        Returns: Language instance
+
+        """
         name = self.resolve_language_name_for_file(filename)
         return self.get_language(name)
 
     def resolve_language_name_for_file(self, filename: str) -> str:
+        """
+
+        Args:
+            filename: filename. Filename can contain directory with separator.
+
+        Returns: language name as str
+
+        """
         for name, config in self._configs.items():
             if config.match(filename):
                 return name

@@ -45,6 +45,9 @@ testpaths = [
 
 [tool.ruff]
 extend = "../pyproject.toml"
+exclude = [
+    "samples/",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["demo_ast"]
