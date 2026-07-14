@@ -1,6 +1,7 @@
 [tool.uv.workspace]
 members = [
     "demo-ast",
+    "demo_vectordb",
 ]
 
 [dependency-groups]
