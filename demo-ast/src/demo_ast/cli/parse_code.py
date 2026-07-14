@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from tree_sitter import Node
+from tree_sitter import Node, QueryCursor
 
 from demo_ast.core import ParserFactory
 from demo_ast.languages import get_language_registry
@@ -70,4 +70,48 @@ def parse(
     )
 
     formatter = TreeFormatter()
+    query = language_registry.get_query(language_name)
+    q_cursor = QueryCursor(query)
+    q_res = q_cursor.captures(cst_tree.root_node)
+    r = q_cursor.matches(cst_tree.root_node)
     print(formatter.format(cst_tree_str))
+
+def uast_to_dict(node: Any) -> dict[str, Any]:
+    # Format expected by TreeFormatter: {"NodeLabel": [children_dicts]}
+    key = f"[{node.node_type}] {node.name}" if getattr(node, "name", "") else f"[{node.node_type}]"
+    
+    if getattr(node, "docstring", None):
+        key += " (has doc)"
+    if getattr(node, "metadata", None):
+        key += f" {node.metadata}"
+        
+    children = []
+    for child in getattr(node, "children", []):
+        children.append(uast_to_dict(child))
+        
+    return {key: children}
+
+
+@app.command(name="query", help="Test query and build UAST")
+def inspect_structure(
+    path: Annotated[str, typer.Argument(help="Path to source code(file)")],
+):
+    path = Path(path)
+    if (not path.exists()) or (not path.is_file()):
+        raise RuntimeError(f"Path {path} is not a file")
+
+    content = path.read_bytes()
+
+    language_name = language_registry.resolve_language_name_for_file(path.name)
+    parser = parser_factory.get_parser(language_name)
+    query = language_registry.get_query(language_name)
+
+    cst_tree = parser.parse(content)
+
+    from demo_ast.core.uast.converter import SimpleUASTConverter
+    converter = SimpleUASTConverter(language_name, parser.language, query)
+    uast_tree = converter.convert(cst_tree, content, str(path))
+
+    formatter = TreeFormatter()
+    uast_dict = uast_to_dict(uast_tree)
+    print(formatter.format(uast_dict))

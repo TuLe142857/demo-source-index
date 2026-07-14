@@ -1,15 +1,41 @@
 # import
 import os
 
+
+
+class Calculator:
+    def __int__(self):
+        pass
+
+    def sum(self, a, b):
+        """
+        Sum the two numbers
+        Args:
+            a: number
+            b: number
+
+        Returns: the sum of the two numbers
+
+        """
+        return a + b
+
 # Constant
-YEAR: int = 2026
+NAME: str = "World"
+""" doc..."""
 
+def say_hi(name: str=NAME):
+    """
+    Docstring ...
+    Args:
+        name: name
 
-# Function
-def calc_sum(a: int | float, b: int | float) -> int | float:
-    return a + b
+    Returns: None
+
+    """
+    print("Hello, " + name)
 
 
 if __name__ == "__main__":
-    print(os.getcwd())
-    print(calc_sum(3, 4))
+    calculator = Calculator()
+    print(calculator.sum(1, 2))
+    say_hi()
