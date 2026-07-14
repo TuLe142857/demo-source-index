@@ -1,26 +1,35 @@
 import hashlib
 from typing import Protocol, Any, Dict, List
 
-from tree_sitter import Tree, Language, Query, Node
+from tree_sitter import Tree, Language, Query, Node, QueryCursor
 
 from .uast_node import (
     UASTNode, FileNode, Position, ClassNode, FunctionNode, VariableNode, ImportNode
 )
-
-def generate_id(file_path: str, start_byte: int, end_byte: int) -> str:
-    """Tạo ID duy nhất dựa trên file và tọa độ byte."""
-    raw = f"{file_path}:{start_byte}:{end_byte}"
-    return hashlib.md5(raw.encode()).hexdigest()
 
 class UASTConverter(Protocol):
     def convert(
             self,
             tree: Tree,
             source_bytes: bytes,
-            file_path: str = "",
-            additional_meta: dict[str, Any] | None = None) -> UASTNode:
+            file_path: str = ""
+    ) -> UASTNode:
+        """
+
+        Args:
+            tree: ts_tree
+            source_bytes: source code as bytes
+            file_path: source code file path
+
+        Returns: UASTNode - root node
+
+        """
         pass
 
+def generate_id(file_path: str, start_byte: int, end_byte: int) -> str:
+    """Tạo ID duy nhất dựa trên file và tọa độ byte."""
+    raw = f"{file_path}:{start_byte}:{end_byte}"
+    return hashlib.md5(raw.encode()).hexdigest()
 
 class SimpleUASTConverter(UASTConverter):
     def __init__(self, language_name: str, language: Language, query: Query):
@@ -43,27 +52,14 @@ class SimpleUASTConverter(UASTConverter):
             tree: Tree,
             source_bytes: bytes,
             file_path: str = "",
-            additional_meta: dict[str, Any] | None = None
     ) -> UASTNode:
         ts_root = tree.root_node
-        
-        # 1. Trích xuất tất cả các captures
-        # Lưu ý: tree_sitter API có thể trả về dict hoặc list tùy phiên bản
-        from tree_sitter import QueryCursor
-        captures_raw = QueryCursor(self.query).captures(ts_root)
+
+        query_result: dict[str, list[Node]] = QueryCursor(self.query).captures(ts_root)
         
         captures_map: dict[int, list[str]] = dict()
-        
-        if isinstance(captures_raw, dict):
-            # API trả về dạng dict {capture_name: [nodes]}
-            for capture_name, nodes in captures_raw.items():
-                for node in nodes:
-                    if node.id not in captures_map:
-                        captures_map[node.id] = []
-                    captures_map[node.id].append(capture_name)
-        elif isinstance(captures_raw, list):
-            # API trả về dạng list [(node, capture_name)]
-            for node, capture_name in captures_raw:
+        for capture_name, nodes in query_result.items():
+            for node in nodes:
                 if node.id not in captures_map:
                     captures_map[node.id] = []
                 captures_map[node.id].append(capture_name)
@@ -71,10 +67,31 @@ class SimpleUASTConverter(UASTConverter):
         return self.build_uast(ts_root, captures_map, source_bytes, file_path)
 
     def build_uast(self, root_ts: Node, captures_map: dict[int, list[str]], source_bytes: bytes, file_path: str) -> FileNode:
+        """
+
+        Args:
+            root_ts: ts root node
+            captures_map: map[ts_node_id, list[capture_name]]
+            source_bytes: source code as byte
+            file_path: source code file path
+
+        Returns: FileNode
+
+        """
         # Bộ đệm để hứng các metadata dạng sibling (đứng trước class/function như Javadoc, Decorators)
         metadata_buffer = []
 
-        def traverse(ts_node: Node, current_uast_parent: UASTNode):
+        def traverse(ts_node: Node, current_uast_parent: UASTNode, current_reference: str | None = None):
+            """
+            Args:
+                current_reference:
+                ts_node:
+                current_uast_parent:
+
+
+            Returns:
+
+            """
             nonlocal metadata_buffer
 
             captures = captures_map.get(ts_node.id, [])
@@ -91,17 +108,27 @@ class SimpleUASTConverter(UASTConverter):
                         # Xả bộ đệm (áp dụng Javadoc, Decorators đã tích luỹ từ trước)
                         self._apply_buffer(new_uast_node, metadata_buffer)
                         metadata_buffer.clear()
+                        current_reference = None
                         break  
+
+            # Cập nhật current_reference nếu node hiện tại có tag reference
+            for cap in captures:
+                if cap.startswith("reference."):
+                    current_reference = cap
 
             # Xác định context để truyền xuống cho các node con
             active_context = new_uast_node if new_uast_node else current_uast_parent
 
             # 2. Xử lý các tag metadata hiện tại (name, doc, modifier)
             for cap in captures:
-                if not cap.startswith("definition."):
+                if not cap.startswith("definition.") and not cap.startswith("reference."):
                     text = self._extract_text(ts_node, source_bytes)
                     if cap == "name":
-                        active_context.name = text
+                        if current_reference == "reference.call":
+                            if hasattr(active_context, "calls"):
+                                active_context.calls.append(text)
+                        else:
+                            active_context.name = text
                     elif cap in ["doc", "comment", "decorator", "modifier"]:
                         if self._is_child_of(ts_node, active_context):
                             # Docstring kiểu Python (nằm TRONG block định nghĩa)
@@ -112,7 +139,7 @@ class SimpleUASTConverter(UASTConverter):
 
             # 3. Đệ quy xuống các node con
             for child in ts_node.children:
-                traverse(child, active_context)
+                traverse(child, active_context, current_reference)
 
         # Khởi tạo node root của file
         file_node = FileNode(
@@ -125,7 +152,8 @@ class SimpleUASTConverter(UASTConverter):
             language=self.language_name
         )
 
-        traverse(root_ts, file_node)
+        for child in root_ts.children:
+            traverse(child, file_node)
 
         return file_node
 

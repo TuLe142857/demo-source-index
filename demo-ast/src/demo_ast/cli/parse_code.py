@@ -3,8 +3,8 @@ from typing import Annotated, Any
 
 import typer
 from tree_sitter import Node, QueryCursor
-
-from demo_ast.core import ParserFactory
+from demo_ast.core.uast.converter import SimpleUASTConverter
+from demo_ast.core import ParserFactory, UASTNode
 from demo_ast.languages import get_language_registry
 
 from .formatter import TreeFormatter
@@ -76,7 +76,7 @@ def parse(
     r = q_cursor.matches(cst_tree.root_node)
     print(formatter.format(cst_tree_str))
 
-def uast_to_dict(node: Any) -> dict[str, Any]:
+def uast_to_dict(node: UASTNode) -> dict[str, Any]:
     # Format expected by TreeFormatter: {"NodeLabel": [children_dicts]}
     key = f"[{node.node_type}] {node.name}" if getattr(node, "name", "") else f"[{node.node_type}]"
     
@@ -103,13 +103,14 @@ def inspect_structure(
     content = path.read_bytes()
 
     language_name = language_registry.resolve_language_name_for_file(path.name)
+    language = language_registry.get_language(language_name)
     parser = parser_factory.get_parser(language_name)
     query = language_registry.get_query(language_name)
 
     cst_tree = parser.parse(content)
 
-    from demo_ast.core.uast.converter import SimpleUASTConverter
-    converter = SimpleUASTConverter(language_name, parser.language, query)
+
+    converter = SimpleUASTConverter(language_name, language, query)
     uast_tree = converter.convert(cst_tree, content, str(path))
 
     formatter = TreeFormatter()

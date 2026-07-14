@@ -14,6 +14,8 @@ class UASTNode:
     """Base class for UAST (Unified Abstract Syntax Tree) nodes."""
 
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """Unique UUID"""
+
     node_type: str
     
     start_point: Position
@@ -22,9 +24,12 @@ class UASTNode:
     end_byte: int
     
     language: str | None = None
-    name: str = ""
-    file_path: str | None = None
 
+    name: str = ""
+    """Name(identifier) of the node"""
+
+    file_path: str | None = None
+    """File path of the node"""
     
     source_code: str | None = None
     docstring: str | None = None
